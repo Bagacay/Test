@@ -1,8 +1,5 @@
 <?php
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 include_once("./connection.php");
 
 // Function to get the latest location from the database
@@ -16,6 +13,8 @@ function getLocationFromDatabase()
 
     try {
         // Retrieve the latest location from the database
+
+
         $sql = "SELECT latitude, longitude, timestamp FROM locations ORDER BY timestamp DESC";
         $result = $conn->query($sql);
 

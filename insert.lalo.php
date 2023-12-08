@@ -4,7 +4,6 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
     <style>
@@ -20,7 +19,11 @@
 </head>
 
 <body>
-    <h1>Location Tracker</h1>
+    <h1>Got you location, have a nice day!</h1>
+
+    <a href="./index.php">
+        <h1>See Latest Location Stored in the database</h1>
+    </a>
 
     <div id="map"></div>
     <p id="demo"></p>
@@ -28,8 +31,6 @@
     <script>
         var map;
         var marker;
-        var previousLatitude;
-        var previousLongitude;
 
         function initMap(latitude, longitude) {
             map = L.map("map").setView([latitude, longitude], 19);
@@ -42,54 +43,52 @@
             marker = L.marker([latitude, longitude]).addTo(map);
         }
 
-        function getLocationFromDatabase() {
-            // Fetch the location from the server
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPosition);
+            } else {
+                document.getElementById("demo").innerHTML =
+                    "Geolocation is not supported by this browser.";
+            }
+        }
+
+        function showPosition(position) {
+            var latitude = position.coords.latitude;
+            var longitude = position.coords.longitude;
+
+            // Update the map and marker
+            if (!map) {
+                initMap(latitude, longitude);
+            } else {
+                map.setView([latitude, longitude], 19);
+                marker.setLatLng([latitude, longitude]);
+            }
+
+            // Log latitude and longitude to the console
+            console.log("Latitude:", latitude);
+            console.log("Longitude:", longitude);
+
+            // Send the coordinates to a PHP script
             var xmlhttp = new XMLHttpRequest();
             xmlhttp.onreadystatechange = function() {
                 if (this.readyState == 4 && this.status == 200) {
-                    var locationData = JSON.parse(this.responseText);
-
-                    if (locationData && locationData.latitude && locationData.longitude) {
-                        var latitude = locationData.latitude;
-                        var longitude = locationData.longitude;
-
-                        // Check if the location has changed
-                        if (latitude !== previousLatitude || longitude !== previousLongitude) {
-                            // Update the map and marker
-                            if (!map) {
-                                initMap(latitude, longitude);
-                            } else {
-                                map.setView([latitude, longitude], 19);
-                                marker.setLatLng([latitude, longitude]);
-                            }
-
-                            // Log latitude and longitude to the console
-                            console.log("Latitude:", latitude);
-                            console.log("Longitude:", longitude);
-
-                            // Update previous coordinates
-                            previousLatitude = latitude;
-                            previousLongitude = longitude;
-                        }
-                    } else {
-                        // Handle case where location data is not available
-                        console.error("Location data not available");
-                    }
+                    document.getElementById("demo").innerHTML = this.responseText;
                 }
             };
-
-            xmlhttp.open("GET", "get_location.php", true);
+            xmlhttp.open(
+                "GET",
+                "save_location.php?lat=" + latitude + "&lng=" + longitude,
+                true
+            );
             xmlhttp.send();
         }
 
         // Initialize the map when the page loads
         window.onload = function() {
-            getLocationFromDatabase();
-            // Refresh location based on change, not every 5 seconds
-            setInterval(getLocationFromDatabase, 1000); // 1 second (adjust as needed)
+            getLocation();
+            setInterval(getLocation, 300000); // 300,000 milliseconds = 5 minutes
         };
     </script>
-
 </body>
 
 </html>
