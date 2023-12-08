@@ -1,5 +1,6 @@
 <?php
 function connection()
+
 {
     $servername = "localhost";
     $username = "root";

@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
   <style>
@@ -44,43 +45,53 @@
       // Fetch the location from the server
       var xmlhttp = new XMLHttpRequest();
       xmlhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          var locationData = JSON.stringify(this.responseText);
+        if (this.readyState == 4) {
+          if (this.status == 200) {
+            console.log("Server Response:", this.responseText);
 
-          if (locationData && locationData.latitude && locationData.longitude && locationData.timestamp) {
-            var latitude = locationData.latitude;
-            var longitude = locationData.longitude;
-            var timestamp = locationData.timestamp;
+            try {
+              var locationData = JSON.parse(this.responseText);
 
-            // Check if the location has changed
-            if (!locationDataList.length || timestamp > locationDataList[locationDataList.length - 1].timestamp) {
-              // Add the location data to the list
-              locationDataList.push({
-                latitude,
-                longitude,
-                timestamp
-              });
+              if (locationData && locationData.latitude && locationData.longitude && locationData.timestamp) {
+                var latitude = locationData.latitude;
+                var longitude = locationData.longitude;
+                var timestamp = locationData.timestamp;
 
-              // Sort the list by timestamp
-              locationDataList.sort((a, b) => a.timestamp - b.timestamp);
+                // Check if the location has changed
+                if (!locationDataList.length || timestamp > locationDataList[locationDataList.length - 1].timestamp) {
+                  // Add the location data to the list
+                  locationDataList.push({
+                    latitude,
+                    longitude,
+                    timestamp
+                  });
 
-              // Update the map and marker with the latest data
-              var latestLocation = locationDataList[locationDataList.length - 1];
-              if (!map) {
-                initMap(latestLocation.latitude, latestLocation.longitude);
+                  // Sort the list by timestamp
+                  locationDataList.sort((a, b) => a.timestamp - b.timestamp);
+
+                  // Update the map and marker with the latest data
+                  var latestLocation = locationDataList[locationDataList.length - 1];
+                  if (!map) {
+                    initMap(latestLocation.latitude, latestLocation.longitude);
+                  } else {
+                    map.setView([latestLocation.latitude, latestLocation.longitude], 19);
+                    marker.setLatLng([latestLocation.latitude, latestLocation.longitude]);
+                  }
+
+                  // Log latitude, longitude, and timestamp to the console
+                  console.log("Latitude:", latestLocation.latitude);
+                  console.log("Longitude:", latestLocation.longitude);
+                  console.log("Timestamp:", latestLocation.timestamp);
+                }
               } else {
-                map.setView([latestLocation.latitude, latestLocation.longitude], 19);
-                marker.setLatLng([latestLocation.latitude, latestLocation.longitude]);
+                // Handle case where location data is not available
+                console.error("Invalid location data:", this.responseText);
               }
-
-              // Log latitude, longitude, and timestamp to the console
-              console.log("Latitude:", latestLocation.latitude);
-              console.log("Longitude:", latestLocation.longitude);
-              console.log("Timestamp:", latestLocation.timestamp);
+            } catch (error) {
+              console.error("Error parsing JSON:", error);
             }
           } else {
-            // Handle case where location data is not available
-            console.error("Invalid location data:", this.responseText);
+            console.error("HTTP status code:", this.status);
           }
         }
       };

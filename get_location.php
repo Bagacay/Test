@@ -1,4 +1,8 @@
 <?php
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 include_once("./connection.php");
 
 // Function to get the latest location from the database
@@ -32,4 +36,8 @@ function getLocationFromDatabase()
 $location = getLocationFromDatabase();
 
 // Send response back to the JavaScript code
-echo json_encode($location);
+if ($location === null) {
+    echo json_encode(['error' => 'Location not found']);
+} else {
+    echo json_encode($location);
+}
